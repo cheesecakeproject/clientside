@@ -1,0 +1,1990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClientSide — Spotify Controller</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f0f0f0;
+            --bg-tertiary: #e5e5e5;
+            --bg-hover: #d9d9d9;
+            --text-primary: #0a0a0a;
+            --text-secondary: #525252;
+            --text-tertiary: #8a8a8a;
+            --accent: #0a0a0a;
+            --accent-hover: #262626;
+            --accent-soft: rgba(10, 10, 10, 0.08);
+            --border: rgba(10, 10, 10, 0.1);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 12px 32px rgba(0,0,0,0.12);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --transition: 0.15s ease;
+        }
+
+        .dark {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --bg-tertiary: #1f1f1f;
+            --bg-hover: #2a2a2a;
+            --text-primary: #fafafa;
+            --text-secondary: #a3a3a3;
+            --text-tertiary: #666666;
+            --accent: #fafafa;
+            --accent-hover: #e5e5e5;
+            --accent-soft: rgba(250, 250, 250, 0.08);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Syne', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-tertiary);
+            border-radius: 3px;
+        }
+
+        .app {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bg-primary);
+            font-size: 14px;
+        }
+
+        .logo-text {
+            font-family: 'Space Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .device-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+            color: var(--text-secondary);
+        }
+
+        .device-selector:hover {
+            border-color: var(--accent);
+        }
+
+        .device-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+            border-color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 75vh;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .login-card {
+            background: var(--bg-primary);
+            padding: 48px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            max-width: 420px;
+            width: 100%;
+        }
+
+        .login-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--accent);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 28px;
+            font-size: 28px;
+            color: var(--bg-primary);
+        }
+
+        .login-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .login-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 36px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .login-input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .login-input-group label {
+            display: block;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .login-input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-family: 'Space Mono', monospace;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+
+        .login-input-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .login-help {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 20px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .login-help a {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+
+        .auth-status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+            display: none;
+        }
+
+        .auth-status.loading {
+            display: block;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .auth-status.error {
+            display: block;
+            background: rgba(220, 38, 38, 0.1);
+            color: #dc2626;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar-card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        .nav-item i {
+            width: 18px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .section-title {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-tertiary);
+            padding: 12px 14px 8px;
+            margin-top: 8px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .playlist-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 12px;
+        }
+
+        .playlist-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .playlist-thumb {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            overflow: hidden;
+        }
+
+        .playlist-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .search-bar {
+            background: var(--bg-primary);
+            border-radius: var(--radius-md);
+            padding: 14px 18px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: var(--transition);
+        }
+
+        .search-bar:focus-within {
+            border-color: var(--accent);
+        }
+
+        .search-bar i {
+            color: var(--text-tertiary);
+            font-size: 14px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text-primary);
+        }
+
+        .search-bar input:focus {
+            outline: none;
+        }
+
+        .search-bar input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .now-playing-card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            border: 1px solid var(--border);
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        @media (max-width: 700px) {
+            .now-playing-card {
+                flex-direction: column;
+                text-align: center;
+                padding: 28px;
+            }
+        }
+
+        .album-art {
+            width: 180px;
+            height: 180px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: var(--text-tertiary);
+            flex-shrink: 0;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .album-art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(100%);
+            transition: filter 0.3s ease;
+        }
+
+        .now-playing-card:hover .album-art img {
+            filter: grayscale(0%);
+        }
+
+        @media (max-width: 700px) {
+            .album-art {
+                width: 160px;
+                height: 160px;
+            }
+        }
+
+        .now-playing-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .now-playing-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-tertiary);
+            margin-bottom: 16px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .now-playing-label i {
+            font-size: 6px;
+            animation: blink 1.5s infinite;
+        }
+
+        .track-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            line-height: 1.2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            letter-spacing: -0.5px;
+        }
+
+        .track-artist {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .track-album {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-bottom: 28px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .progress-container {
+            margin-bottom: 28px;
+        }
+
+        .progress-bar-wrapper {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            width: 0%;
+            position: relative;
+            transition: width 0.1s linear;
+        }
+
+        .progress-times {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 10px;
+            color: var(--text-tertiary);
+            font-family: 'Space Mono', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 700px) {
+            .controls {
+                flex-wrap: wrap;
+            }
+        }
+
+        .control-btn {
+            width: 44px;
+            height: 44px;
+            border: 1px solid transparent;
+            background: transparent;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .control-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .control-btn.active {
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .control-btn-main {
+            width: 52px;
+            height: 52px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            font-size: 18px;
+            border: none;
+        }
+
+        .control-btn-main:hover {
+            background: var(--accent-hover);
+            color: var(--bg-primary);
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        @media (max-width: 700px) {
+            .volume-control {
+                margin-left: 0;
+                width: 100%;
+                justify-content: center;
+                margin-top: 16px;
+            }
+        }
+
+        .volume-slider {
+            width: 80px;
+            height: 4px;
+            -webkit-appearance: none;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .track-list-card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .track-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .track-list-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .track-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .track-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .track-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .track-item.playing {
+            background: var(--accent-soft);
+            border-color: var(--border);
+        }
+
+        .track-num {
+            width: 20px;
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-align: center;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .track-item:hover .track-num {
+            display: none;
+        }
+
+        .track-item:hover .track-play-icon {
+            display: flex;
+        }
+
+        .track-play-icon {
+            display: none;
+            width: 20px;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            font-size: 12px;
+        }
+
+        .track-thumb {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .track-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(100%);
+        }
+
+        .track-item:hover .track-thumb img {
+            filter: grayscale(0%);
+        }
+
+        .track-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .track-name {
+            font-size: 13px;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .track-meta {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .track-duration {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .track-actions {
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .track-item:hover .track-actions {
+            opacity: 1;
+        }
+
+        .track-action-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            font-size: 12px;
+        }
+
+        .track-action-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            width: 100%;
+            max-width: 380px;
+            transform: translateY(20px);
+            transition: var(--transition);
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+
+        .modal-overlay.show .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .device-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .device-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+        }
+
+        .device-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .device-item.active {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .device-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .device-item.active .device-icon {
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        .device-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .device-type {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .active-badge {
+            background: var(--accent);
+            color: var(--bg-primary);
+            font-size: 9px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-left: auto;
+            font-family: 'Space Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state i {
+            font-size: 36px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+        }
+
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--bg-tertiary);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 40px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--accent);
+            color: var(--bg-primary);
+            padding: 14px 20px;
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.2s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 600px) {
+            .app {
+                padding: 16px;
+            }
+
+            .header {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .track-title {
+                font-size: 20px;
+            }
+
+            .track-actions {
+                opacity: 1;
+            }
+
+            .device-selector span {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-bolt"></i></div>
+                <span class="logo-text">ClientSide</span>
+            </div>
+            <div class="header-actions" id="headerActions"></div>
+        </header>
+
+        <div class="login-screen" id="loginScreen">
+            <div class="login-card">
+                <div class="login-icon"><i class="fab fa-spotify"></i></div>
+                <h1 class="login-title">Connect</h1>
+                <p class="login-subtitle">Secure PKCE authentication. Enter your Spotify app credentials to begin.</p>
+
+                <div class="login-input-group">
+                    <label for="clientId">Client ID</label>
+                    <input type="text" id="clientId" placeholder="Paste your Client ID here">
+                </div>
+
+                <button class="btn btn-primary" id="loginBtn" style="width: 100%; justify-content: center; margin-top: 8px;" onclick="initiateLogin()">
+                    <i class="fab fa-spotify"></i>
+                    Authenticate
+                </button>
+
+                <div class="auth-status" id="authStatus"></div>
+
+                <p class="login-help">
+                    Create an app at <a href="https://developer.spotify.com/dashboard" target="_blank">developer.spotify.com</a><br>
+                    <small style="margin-top: 6px; display: block;">Redirect URI: current page URL</small>
+                </p>
+            </div>
+        </div>
+
+        <div class="main-layout hidden" id="mainApp">
+            <aside class="sidebar">
+                <div class="sidebar-card">
+                    <div class="nav-item active" data-view="home" onclick="switchView('home')">
+                        <i class="fas fa-house"></i>
+                        <span>Home</span>
+                    </div>
+                    <div class="nav-item" data-view="search" onclick="switchView('search')">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <span>Search</span>
+                    </div>
+                    <div class="nav-item" data-view="queue" onclick="switchView('queue')">
+                        <i class="fas fa-bars-staggered"></i>
+                        <span>Queue</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="section-title">Library</div>
+                    <div class="nav-item" data-view="liked" onclick="switchView('liked')">
+                        <i class="fas fa-heart"></i>
+                        <span>Liked Songs</span>
+                    </div>
+                    <div class="nav-item" data-view="recent" onclick="switchView('recent')">
+                        <i class="fas fa-clock-rotate-left"></i>
+                        <span>Recently Played</span>
+                    </div>
+
+                    <div class="section-title">Playlists</div>
+                    <div id="playlistList"></div>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <div class="search-bar">
+                    <i class="fas fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Search songs, artists, albums..." oninput="handleSearch(event)">
+                </div>
+
+                <div class="now-playing-card" id="nowPlayingCard">
+                    <div class="album-art" id="albumArt">
+                        <i class="fas fa-compact-disc"></i>
+                    </div>
+                    <div class="now-playing-info">
+                        <div class="now-playing-label">
+                            <i class="fas fa-circle"></i>
+                            Now Playing
+                        </div>
+                        <h2 class="track-title" id="trackTitle">No Active Playback</h2>
+                        <p class="track-artist" id="trackArtist">Start playing on any Spotify device</p>
+                        <p class="track-album" id="trackAlbum"></p>
+
+                        <div class="progress-container">
+                            <div class="progress-bar-wrapper" id="progressWrapper" onclick="seekTo(event)">
+                                <div class="progress-bar" id="progressBar"></div>
+                            </div>
+                            <div class="progress-times">
+                                <span id="currentTime">0:00</span>
+                                <span id="totalTime">0:00</span>
+                            </div>
+                        </div>
+
+                        <div class="controls">
+                            <button class="control-btn" id="shuffleBtn" onclick="toggleShuffle()" title="Shuffle">
+                                <i class="fas fa-shuffle"></i>
+                            </button>
+                            <button class="control-btn" onclick="previousTrack()" title="Previous">
+                                <i class="fas fa-backward-step"></i>
+                            </button>
+                            <button class="control-btn control-btn-main" id="playBtn" onclick="togglePlay()">
+                                <i class="fas fa-play" id="playIcon"></i>
+                            </button>
+                            <button class="control-btn" onclick="nextTrack()" title="Next">
+                                <i class="fas fa-forward-step"></i>
+                            </button>
+                            <button class="control-btn" id="repeatBtn" onclick="toggleRepeat()" title="Repeat">
+                                <i class="fas fa-repeat"></i>
+                            </button>
+                            <div class="volume-control">
+                                <button class="control-btn" onclick="toggleMute()" id="volumeBtn">
+                                    <i class="fas fa-volume-high"></i>
+                                </button>
+                                <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50" onchange="setVolume(this.value)" oninput="setVolume(this.value)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="track-list-card" id="trackListCard">
+                    <div class="track-list-header">
+                        <h3 class="track-list-title" id="listTitle">Recently Played</h3>
+                    </div>
+                    <div class="track-list" id="trackList">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="deviceModal" onclick="closeDeviceModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">Select Device</h3>
+                <button class="modal-close" onclick="closeDeviceModal()"><i class="fas fa-xmark"></i></button>
+            </div>
+            <div class="device-list" id="deviceList">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Spotify PKCE Auth Configuration
+        const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize';
+        const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';
+        const SPOTIFY_API_URL = 'https://api.spotify.com/v1';
+        const SCOPES = [
+            'user-read-playback-state',
+            'user-modify-playback-state',
+            'user-read-currently-playing',
+            'user-read-recently-played',
+            'user-library-read',
+            'playlist-read-private',
+            'playlist-read-collaborative',
+            'user-top-read'
+        ].join(' ');
+
+        // Token state
+        let accessToken = null;
+        let refreshToken = null;
+        let tokenExpiry = null;
+        let clientId = null;
+
+        // App state
+        let refreshInterval = null;
+        let tokenRefreshTimeout = null;
+        let currentTrack = null;
+        let currentDevice = null;
+        let isPlaying = false;
+        let shuffleState = false;
+        let repeatState = 'off';
+        let lastVolume = 50;
+        let currentView = 'home';
+
+        // Dark mode
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            document.documentElement.classList.toggle('dark', event.matches);
+        });
+
+        // ============ PKCE Helpers ============
+
+        function generateRandomString(length) {
+            const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+            const values = crypto.getRandomValues(new Uint8Array(length));
+            return Array.from(values).map(x => possible[x % possible.length]).join('');
+        }
+
+        async function sha256(plain) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(plain);
+            return crypto.subtle.digest('SHA-256', data);
+        }
+
+        function base64urlencode(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let str = '';
+            bytes.forEach(b => str += String.fromCharCode(b));
+            return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        async function generateCodeChallenge(verifier) {
+            const hashed = await sha256(verifier);
+            return base64urlencode(hashed);
+        }
+
+        // Cookie helpers (since localStorage may not be available in iframe)
+        function setCookie(name, value, days = 7) {
+            const expires = new Date(Date.now() + days * 864e5).toUTCString();
+            document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+            return null;
+        }
+
+        function deleteCookie(name) {
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+        }
+
+        // ============ Auth Flow ============
+
+        async function initiateLogin() {
+            const inputClientId = document.getElementById('clientId').value.trim();
+            if (!inputClientId) {
+                showToast('Enter your Client ID');
+                return;
+            }
+
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting...';
+
+            // Generate PKCE values
+            const codeVerifier = generateRandomString(64);
+            const codeChallenge = await generateCodeChallenge(codeVerifier);
+            const state = generateRandomString(16);
+
+            // Store in cookies for after redirect
+            setCookie('pkce_verifier', codeVerifier, 1);
+            setCookie('pkce_state', state, 1);
+            setCookie('spotify_client_id', inputClientId, 30);
+
+            const redirectUri = window.location.href.split('#')[0].split('?')[0];
+
+            const params = new URLSearchParams({
+                client_id: inputClientId,
+                response_type: 'code',
+                redirect_uri: redirectUri,
+                scope: SCOPES,
+                state: state,
+                code_challenge_method: 'S256',
+                code_challenge: codeChallenge,
+                show_dialog: 'true'
+            });
+
+            window.location.href = `${SPOTIFY_AUTH_URL}?${params.toString()}`;
+        }
+
+        async function handleCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const error = urlParams.get('error');
+
+            if (error) {
+                showAuthError(`Authorization failed: ${error}`);
+                return false;
+            }
+
+            if (!code) return false;
+
+            // Verify state
+            const storedState = getCookie('pkce_state');
+            if (state !== storedState) {
+                showAuthError('State mismatch. Please try again.');
+                return false;
+            }
+
+            const codeVerifier = getCookie('pkce_verifier');
+            clientId = getCookie('spotify_client_id');
+
+            if (!codeVerifier || !clientId) {
+                showAuthError('Missing authentication data. Please try again.');
+                return false;
+            }
+
+            // Show loading state
+            showAuthStatus('Exchanging code for tokens...');
+
+            try {
+                const redirectUri = window.location.href.split('#')[0].split('?')[0];
+
+                const response = await fetch(SPOTIFY_TOKEN_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        grant_type: 'authorization_code',
+                        code: code,
+                        redirect_uri: redirectUri,
+                        client_id: clientId,
+                        code_verifier: codeVerifier
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error_description || data.error || 'Token exchange failed');
+                }
+
+                // Store tokens
+                accessToken = data.access_token;
+                refreshToken = data.refresh_token;
+                tokenExpiry = Date.now() + (data.expires_in * 1000);
+
+                // Save refresh token in cookie
+                setCookie('spotify_refresh_token', refreshToken, 30);
+                setCookie('spotify_token_expiry', tokenExpiry.toString(), 30);
+
+                // Clean up PKCE cookies
+                deleteCookie('pkce_verifier');
+                deleteCookie('pkce_state');
+
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+
+                // Schedule token refresh
+                scheduleTokenRefresh();
+
+                return true;
+            } catch (err) {
+                showAuthError(`Token exchange failed: ${err.message}`);
+                return false;
+            }
+        }
+
+        async function refreshAccessToken() {
+            if (!refreshToken || !clientId) {
+                logout();
+                return false;
+            }
+
+            try {
+                const response = await fetch(SPOTIFY_TOKEN_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        grant_type: 'refresh_token',
+                        refresh_token: refreshToken,
+                        client_id: clientId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error_description || 'Refresh failed');
+                }
+
+                accessToken = data.access_token;
+                tokenExpiry = Date.now() + (data.expires_in * 1000);
+
+                // Update refresh token if a new one was provided
+                if (data.refresh_token) {
+                    refreshToken = data.refresh_token;
+                    setCookie('spotify_refresh_token', refreshToken, 30);
+                }
+
+                setCookie('spotify_token_expiry', tokenExpiry.toString(), 30);
+                scheduleTokenRefresh();
+
+                return true;
+            } catch (err) {
+                console.error('Token refresh failed:', err);
+                logout();
+                return false;
+            }
+        }
+
+        function scheduleTokenRefresh() {
+            if (tokenRefreshTimeout) {
+                clearTimeout(tokenRefreshTimeout);
+            }
+
+            // Refresh 5 minutes before expiry
+            const refreshIn = Math.max((tokenExpiry - Date.now()) - 300000, 60000);
+            tokenRefreshTimeout = setTimeout(refreshAccessToken, refreshIn);
+        }
+
+        function showAuthStatus(message) {
+            const status = document.getElementById('authStatus');
+            status.className = 'auth-status loading';
+            status.textContent = message;
+        }
+
+        function showAuthError(message) {
+            const status = document.getElementById('authStatus');
+            status.className = 'auth-status error';
+            status.textContent = message;
+
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = '<i class="fab fa-spotify"></i> Authenticate';
+
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        // ============ Init ============
+
+        async function init() {
+            // Check for callback
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('code') || urlParams.has('error')) {
+                const success = await handleCallback();
+                if (success) {
+                    showMainApp();
+                    return;
+                }
+                showLoginScreen();
+                return;
+            }
+
+            // Try to restore session from cookies
+            const storedRefreshToken = getCookie('spotify_refresh_token');
+            const storedClientId = getCookie('spotify_client_id');
+            const storedExpiry = getCookie('spotify_token_expiry');
+
+            if (storedRefreshToken && storedClientId) {
+                refreshToken = storedRefreshToken;
+                clientId = storedClientId;
+                tokenExpiry = parseInt(storedExpiry) || 0;
+
+                // Refresh the token
+                showAuthStatus('Restoring session...');
+                const success = await refreshAccessToken();
+                if (success) {
+                    showMainApp();
+                    return;
+                }
+            }
+
+            showLoginScreen();
+        }
+
+        function showLoginScreen() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('headerActions').innerHTML = '';
+            document.getElementById('authStatus').className = 'auth-status';
+
+            // Restore client ID if saved
+            const savedClientId = getCookie('spotify_client_id');
+            if (savedClientId) {
+                document.getElementById('clientId').value = savedClientId;
+            }
+        }
+
+        function showMainApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+
+            document.getElementById('headerActions').innerHTML = `
+                <div class="device-selector" onclick="openDeviceModal()">
+                    <div class="device-dot"></div>
+                    <span id="deviceName">Select Device</span>
+                    <i class="fas fa-chevron-down" style="font-size: 9px; margin-left: 4px;"></i>
+                </div>
+                <button class="btn" onclick="logout()">
+                    <i class="fas fa-arrow-right-from-bracket"></i>
+                    Exit
+                </button>
+            `;
+
+            fetchCurrentPlayback();
+            fetchPlaylists();
+            fetchRecentlyPlayed();
+            refreshInterval = setInterval(fetchCurrentPlayback, 3000);
+        }
+
+        function logout() {
+            accessToken = null;
+            refreshToken = null;
+            tokenExpiry = null;
+
+            clearInterval(refreshInterval);
+            clearTimeout(tokenRefreshTimeout);
+
+            deleteCookie('spotify_refresh_token');
+            deleteCookie('spotify_token_expiry');
+
+            showLoginScreen();
+            showToast('Disconnected');
+        }
+
+        // ============ API ============
+
+        async function spotifyFetch(endpoint, options = {}) {
+            // Check if token needs refresh
+            if (tokenExpiry && Date.now() >= tokenExpiry - 60000) {
+                await refreshAccessToken();
+            }
+
+            const response = await fetch(`${SPOTIFY_API_URL}${endpoint}`, {
+                ...options,
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            });
+
+            if (response.status === 401) {
+                const refreshed = await refreshAccessToken();
+                if (refreshed) {
+                    return spotifyFetch(endpoint, options);
+                }
+                return null;
+            }
+
+            if (response.status === 204) return null;
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || 'Request failed');
+            }
+
+            return response.json();
+        }
+
+        async function fetchCurrentPlayback() {
+            try {
+                const data = await spotifyFetch('/me/player');
+                if (data && data.item) {
+                    updateNowPlaying(data);
+                    currentDevice = data.device;
+                    document.getElementById('deviceName').textContent = currentDevice?.name || 'Select Device';
+                } else {
+                    clearNowPlaying();
+                }
+            } catch {
+                // Silent
+            }
+        }
+
+        function updateNowPlaying(data) {
+            const track = data.item;
+            currentTrack = track;
+            isPlaying = data.is_playing;
+            shuffleState = data.shuffle_state;
+            repeatState = data.repeat_state;
+
+            const albumArt = document.getElementById('albumArt');
+            if (track.album?.images?.[0]?.url) {
+                albumArt.innerHTML = `<img src="${track.album.images[0].url}" alt="">`;
+            } else {
+                albumArt.innerHTML = '<i class="fas fa-compact-disc"></i>';
+            }
+
+            document.getElementById('trackTitle').textContent = track.name;
+            document.getElementById('trackArtist').textContent = track.artists.map(a => a.name).join(', ');
+            document.getElementById('trackAlbum').textContent = track.album?.name || '';
+
+            updateProgress(data.progress_ms, track.duration_ms);
+            document.getElementById('playIcon').className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+            document.getElementById('shuffleBtn').classList.toggle('active', shuffleState);
+            document.getElementById('repeatBtn').classList.toggle('active', repeatState !== 'off');
+
+            if (data.device) {
+                document.getElementById('volumeSlider').value = data.device.volume_percent;
+                updateVolumeIcon(data.device.volume_percent);
+            }
+        }
+
+        function clearNowPlaying() {
+            currentTrack = null;
+            isPlaying = false;
+            document.getElementById('albumArt').innerHTML = '<i class="fas fa-compact-disc"></i>';
+            document.getElementById('trackTitle').textContent = 'No Active Playback';
+            document.getElementById('trackArtist').textContent = 'Start playing on any Spotify device';
+            document.getElementById('trackAlbum').textContent = '';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('currentTime').textContent = '0:00';
+            document.getElementById('totalTime').textContent = '0:00';
+            document.getElementById('playIcon').className = 'fas fa-play';
+        }
+
+        function updateProgress(current, total) {
+            const progress = (current / total) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            document.getElementById('currentTime').textContent = formatTime(current);
+            document.getElementById('totalTime').textContent = formatTime(total);
+        }
+
+        function formatTime(ms) {
+            const seconds = Math.floor(ms / 1000);
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        async function togglePlay() {
+            try {
+                await spotifyFetch(`/me/player/${isPlaying ? 'pause' : 'play'}`, { method: 'PUT' });
+                isPlaying = !isPlaying;
+                document.getElementById('playIcon').className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+            } catch {
+                showToast('No active device');
+            }
+        }
+
+        async function nextTrack() {
+            try {
+                await spotifyFetch('/me/player/next', { method: 'POST' });
+                setTimeout(fetchCurrentPlayback, 500);
+            } catch {
+                showToast('Failed');
+            }
+        }
+
+        async function previousTrack() {
+            try {
+                await spotifyFetch('/me/player/previous', { method: 'POST' });
+                setTimeout(fetchCurrentPlayback, 500);
+            } catch {
+                showToast('Failed');
+            }
+        }
+
+        async function toggleShuffle() {
+            try {
+                await spotifyFetch(`/me/player/shuffle?state=${!shuffleState}`, { method: 'PUT' });
+                shuffleState = !shuffleState;
+                document.getElementById('shuffleBtn').classList.toggle('active', shuffleState);
+                showToast(`Shuffle ${shuffleState ? 'on' : 'off'}`);
+            } catch {
+                showToast('Failed');
+            }
+        }
+
+        async function toggleRepeat() {
+            try {
+                const states = ['off', 'context', 'track'];
+                const currentIndex = states.indexOf(repeatState);
+                const newState = states[(currentIndex + 1) % 3];
+                await spotifyFetch(`/me/player/repeat?state=${newState}`, { method: 'PUT' });
+                repeatState = newState;
+                document.getElementById('repeatBtn').classList.toggle('active', repeatState !== 'off');
+                showToast(`Repeat: ${newState}`);
+            } catch {
+                showToast('Failed');
+            }
+        }
+
+        async function setVolume(value) {
+            try {
+                await spotifyFetch(`/me/player/volume?volume_percent=${value}`, { method: 'PUT' });
+                updateVolumeIcon(value);
+                lastVolume = value;
+            } catch {
+                // Silent
+            }
+        }
+
+        function toggleMute() {
+            const slider = document.getElementById('volumeSlider');
+            if (parseInt(slider.value) > 0) {
+                lastVolume = slider.value;
+                slider.value = 0;
+                setVolume(0);
+            } else {
+                slider.value = lastVolume || 50;
+                setVolume(lastVolume || 50);
+            }
+        }
+
+        function updateVolumeIcon(value) {
+            const icon = document.getElementById('volumeBtn').querySelector('i');
+            if (value == 0) icon.className = 'fas fa-volume-xmark';
+            else if (value < 50) icon.className = 'fas fa-volume-low';
+            else icon.className = 'fas fa-volume-high';
+        }
+
+        async function seekTo(event) {
+            if (!currentTrack) return;
+            const wrapper = document.getElementById('progressWrapper');
+            const rect = wrapper.getBoundingClientRect();
+            const percentage = (event.clientX - rect.left) / rect.width;
+            const position = Math.floor(percentage * currentTrack.duration_ms);
+            try {
+                await spotifyFetch(`/me/player/seek?position_ms=${position}`, { method: 'PUT' });
+                updateProgress(position, currentTrack.duration_ms);
+            } catch {
+                showToast('Failed');
+            }
+        }
+
+        async function openDeviceModal() {
+            document.getElementById('deviceModal').classList.add('show');
+            try {
+                const data = await spotifyFetch('/me/player/devices');
+                const deviceList = document.getElementById('deviceList');
+
+                if (!data?.devices?.length) {
+                    deviceList.innerHTML = `<div class="empty-state"><i class="fas fa-plug"></i><p>No devices found</p></div>`;
+                    return;
+                }
+
+                deviceList.innerHTML = data.devices.map(device => `
+                    <div class="device-item ${device.is_active ? 'active' : ''}" onclick="selectDevice('${device.id}', '${device.name}')">
+                        <div class="device-icon"><i class="fas ${getDeviceIcon(device.type)}"></i></div>
+                        <div>
+                            <div class="device-name">${device.name}</div>
+                            <div class="device-type">${device.type}</div>
+                        </div>
+                        ${device.is_active ? '<span class="active-badge">Active</span>' : ''}
+                    </div>
+                `).join('');
+            } catch {
+                showToast('Failed to load devices');
+            }
+        }
+
+        function getDeviceIcon(type) {
+            const icons = { 'Computer': 'fa-laptop', 'Smartphone': 'fa-mobile', 'Speaker': 'fa-speaker', 'TV': 'fa-tv', 'Tablet': 'fa-tablet' };
+            return icons[type] || 'fa-circle-play';
+        }
+
+        async function selectDevice(deviceId, deviceName) {
+            try {
+                await spotifyFetch('/me/player', { method: 'PUT', body: JSON.stringify({ device_ids: [deviceId], play: isPlaying }) });
+                document.getElementById('deviceName').textContent = deviceName;
+                closeDeviceModal();
+                showToast(`Playing on ${deviceName}`);
+                setTimeout(fetchCurrentPlayback, 500);
+            } catch {
+                showToast('Failed to switch');
+            }
+        }
+
+        function closeDeviceModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('deviceModal').classList.remove('show');
+        }
+
+        async function fetchPlaylists() {
+            try {
+                const data = await spotifyFetch('/me/playlists?limit=15');
+                const playlistList = document.getElementById('playlistList');
+                if (!data?.items?.length) {
+                    playlistList.innerHTML = '<p style="padding: 12px; color: var(--text-tertiary); font-size: 12px;">No playlists</p>';
+                    return;
+                }
+                playlistList.innerHTML = data.items.map(p => `
+                    <div class="playlist-item" onclick="loadPlaylist('${p.id}', '${escapeHtml(p.name)}')">
+                        <div class="playlist-thumb">${p.images?.[0]?.url ? `<img src="${p.images[0].url}" alt="">` : '<i class="fas fa-music"></i>'}</div>
+                        <span>${escapeHtml(p.name)}</span>
+                    </div>
+                `).join('');
+            } catch {
+                console.error('Failed to load playlists');
+            }
+        }
+
+        async function loadPlaylist(playlistId, name) {
+            document.getElementById('listTitle').textContent = name;
+            document.getElementById('trackList').innerHTML = '<div class="loading-spinner"></div>';
+            try {
+                const data = await spotifyFetch(`/playlists/${playlistId}/tracks?limit=50`);
+                renderTrackList(data.items.map(item => item.track).filter(Boolean), 'playlist', playlistId);
+            } catch {
+                showToast('Failed to load');
+            }
+        }
+
+        async function fetchRecentlyPlayed() {
+            document.getElementById('listTitle').textContent = 'Recently Played';
+            document.getElementById('trackList').innerHTML = '<div class="loading-spinner"></div>';
+            try {
+                const data = await spotifyFetch('/me/player/recently-played?limit=20');
+                renderTrackList(data.items.map(item => item.track), 'recent');
+            } catch {
+                showToast('Failed to load');
+            }
+        }
+
+        async function fetchLikedSongs() {
+            document.getElementById('listTitle').textContent = 'Liked Songs';
+            document.getElementById('trackList').innerHTML = '<div class="loading-spinner"></div>';
+            try {
+                const data = await spotifyFetch('/me/tracks?limit=50');
+                renderTrackList(data.items.map(item => item.track), 'liked');
+            } catch {
+                showToast('Failed to load');
+            }
+        }
+
+        let searchTimeout = null;
+        function handleSearch(event) {
+            clearTimeout(searchTimeout);
+            const query = event.target.value.trim();
+            if (!query) { fetchRecentlyPlayed(); return; }
+            searchTimeout = setTimeout(() => performSearch(query), 300);
+        }
+
+        async function performSearch(query) {
+            document.getElementById('listTitle').textContent = `Search: "${query}"`;
+            document.getElementById('trackList').innerHTML = '<div class="loading-spinner"></div>';
+            try {
+                const data = await spotifyFetch(`/search?q=${encodeURIComponent(query)}&type=track&limit=30`);
+                renderTrackList(data.tracks.items, 'search');
+            } catch {
+                showToast('Search failed');
+            }
+        }
+
+        function renderTrackList(tracks, context, contextUri = null) {
+            const trackList = document.getElementById('trackList');
+            if (!tracks?.length) {
+                trackList.innerHTML = `<div class="empty-state"><i class="fas fa-music"></i><p>No tracks found</p></div>`;
+                return;
+            }
+            trackList.innerHTML = tracks.map((track, index) => `
+                <div class="track-item ${currentTrack?.id === track.id ? 'playing' : ''}" onclick="playTrack('${track.uri}', ${contextUri ? `'${contextUri}'` : 'null'}, ${index})">
+                    <span class="track-num">${String(index + 1).padStart(2, '0')}</span>
+                    <span class="track-play-icon"><i class="fas fa-play"></i></span>
+                    <div class="track-thumb">${track.album?.images?.[2]?.url ? `<img src="${track.album.images[2].url}" alt="">` : '<i class="fas fa-music" style="color: var(--text-tertiary); font-size: 14px;"></i>'}</div>
+                    <div class="track-info">
+                        <div class="track-name">${escapeHtml(track.name)}</div>
+                        <div class="track-meta">${track.artists?.map(a => escapeHtml(a.name)).join(', ') || 'Unknown'}</div>
+                    </div>
+                    <span class="track-duration">${formatTime(track.duration_ms)}</span>
+                    <div class="track-actions">
+                        <button class="track-action-btn" onclick="event.stopPropagation(); addToQueue('${track.uri}')" title="Add to Queue"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function playTrack(trackUri, contextUri, offset) {
+            try {
+                const body = contextUri ? { context_uri: `spotify:playlist:${contextUri}`, offset: { position: offset } } : { uris: [trackUri] };
+                await spotifyFetch('/me/player/play', { method: 'PUT', body: JSON.stringify(body) });
+                setTimeout(fetchCurrentPlayback, 500);
+            } catch {
+                showToast('No active device');
+            }
+        }
+
+        async function addToQueue(trackUri) {
+            try {
+                await spotifyFetch(`/me/player/queue?uri=${encodeURIComponent(trackUri)}`, { method: 'POST' });
+                showToast('Added to queue');
+            } catch {
+                showToast('Failed');
+            }
+        }
+
+        function switchView(view) {
+            currentView = view;
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.view === view));
+            switch (view) {
+                case 'home':
+                case 'recent': fetchRecentlyPlayed(); break;
+                case 'liked': fetchLikedSongs(); break;
+                case 'search': document.getElementById('searchInput').focus(); break;
+                case 'queue': fetchQueue(); break;
+            }
+        }
+
+        async function fetchQueue() {
+            document.getElementById('listTitle').textContent = 'Queue';
+            document.getElementById('trackList').innerHTML = '<div class="loading-spinner"></div>';
+            try {
+                const data = await spotifyFetch('/me/player/queue');
+                if (data?.queue) renderTrackList(data.queue, 'queue');
+                else document.getElementById('trackList').innerHTML = `<div class="empty-state"><i class="fas fa-bars-staggered"></i><p>Queue is empty</p></div>`;
+            } catch {
+                showToast('Failed to load queue');
+            }
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<i class="fas fa-circle-check"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 200);
+            }, 2500);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            switch (e.code) {
+                case 'Space': e.preventDefault(); togglePlay(); break;
+                case 'ArrowRight': if (e.shiftKey) nextTrack(); break;
+                case 'ArrowLeft': if (e.shiftKey) previousTrack(); break;
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>
